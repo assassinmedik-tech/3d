@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#03070b" />
+    <meta name="description" content="Lost Signal: Outpost 09 — a lightweight 3D sci-fi exploration game." />
+    <title>LOST SIGNAL // OUTPOST 09</title>
+    <script type="module" crossorigin src="./assets/index-CXlhsGpF.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BgxNXaju.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game" aria-label="Lost Signal: Outpost 09 game view"></canvas>
+
+      <!-- ======================= IN-GAME HUD ======================= -->
+      <div id="hud" class="hud">
+        <div class="fx-vignette"></div>
+        <div class="fx-scanlines"></div>
+        <div class="fx-grain"></div>
+
+        <header class="hud-top-left">
+          <div class="brand">
+            <span class="brand-glyph"></span>
+            <span>OUTPOST 09</span>
+            <span class="brand-sub">// ORPHEUS ARRAY</span>
+          </div>
+          <div class="objective-card">
+            <div class="panel-notch"></div>
+            <div class="obj-head"><span class="pulse-dot"></span> CURRENT OBJECTIVE</div>
+            <div class="obj-text" id="objective-text">Recover research data</div>
+            <div class="obj-row">
+              <span class="obj-sub" id="objective-sub">0 / 3 RESEARCH ITEMS</span>
+              <span class="obj-dist" id="objective-dist">-- M</span>
+            </div>
+            <div class="objective-track"><i id="objective-fill"></i></div>
+          </div>
+        </header>
+
+        <aside class="hud-top-right">
+          <div class="status-panel">
+            <div class="status-title"><span>SUIT TELEMETRY</span><span id="signal-state" class="signal-ok">LINK OK</span></div>
+            <div class="stat">
+              <div class="stat-label"><span>HEALTH</span><b id="health-num">100</b></div>
+              <div class="bar"><i id="health-bar" class="bar-health"></i></div>
+            </div>
+            <div class="stat">
+              <div class="stat-label"><span>ENERGY</span><b id="energy-num">100</b></div>
+              <div class="bar"><i id="energy-bar" class="bar-energy"></i></div>
+            </div>
+            <div class="stat">
+              <div class="stat-label"><span>BATTERY</span><b id="battery-num">100</b></div>
+              <div class="bar"><i id="battery-bar" class="bar-battery"></i></div>
+            </div>
+            <div class="threat-line">
+              <span id="threat-dot" class="threat-dot"></span>
+              <span id="threat-text">NO HOSTILES DETECTED</span>
+            </div>
+          </div>
+          <div class="hud-buttons">
+            <button id="btn-flashlight" class="hud-icon-btn" title="Flashlight (F)" aria-label="Toggle flashlight">
+              <svg viewBox="0 0 24 24"><path d="M9 2h6v3l-1 2v13H10V7L9 5V2Zm-2 5h10v3h-1v3h-3v-1h-2v1H6V7Z"/></svg>
+            </button>
+            <button id="btn-inventory" class="hud-icon-btn" title="Inventory (Tab)" aria-label="Open inventory">
+              <svg viewBox="0 0 24 24"><path d="M4 7h16v13H4V7Zm4-3h8l2 3H6l2-3Zm1 8h2v2h2v-2h2v2h2v-2h-2v-2h-2v2H9V8H7v4Z"/></svg>
+            </button>
+            <button id="btn-pause" class="hud-icon-btn" title="Pause (Esc)" aria-label="Pause game">
+              <svg viewBox="0 0 24 24"><path d="M7 4h3v16H7V4Zm7 0h3v16h-3V4Z"/></svg>
+            </button>
+          </div>
+        </aside>
+
+        <div class="quickbar" id="quickbar">
+          <div class="quickbar-head"><span>FIELD INVENTORY</span><span id="inv-count">0/6</span></div>
+          <div class="quick-slots" id="quick-slots"></div>
+          <div class="quick-hint"><kbd>TAB</kbd> INVENTORY</div>
+        </div>
+
+        <div class="extract-panel" id="extract-panel">
+          <div class="extract-head"><span class="pulse-dot amber"></span> EXTRACTION IN PROGRESS</div>
+          <div class="extract-bar"><i id="extract-fill"></i></div>
+          <div class="extract-meta"><span id="extract-time">00:12</span><span>HOLD POSITION</span></div>
+        </div>
+
+        <div class="hidden-indicator" id="hidden-indicator">
+          <span class="hide-eye"></span> CONCEALED <small>ENEMY VISUAL CONTACT BLOCKED</small>
+        </div>
+
+        <div class="interact-prompt" id="interact-prompt">
+          <span class="keycap" id="prompt-key">E</span>
+          <span id="prompt-text">Interact</span>
+          <span class="prompt-line"></span>
+        </div>
+
+        <div class="objective-marker" id="objective-marker">
+          <div class="marker-diamond"></div>
+          <span id="marker-label">OBJECTIVE</span>
+          <span id="marker-dist">--M</span>
+        </div>
+
+        <div class="toast-stack" id="toast-stack"></div>
+        <div class="damage-vignette" id="damage-vignette"></div>
+        <div class="desktop-hint" id="desktop-hint">
+          <span><kbd>WASD</kbd> MOVE</span><span><kbd>SHIFT</kbd> SPRINT</span><span><kbd>E</kbd> INTERACT</span><span><kbd>MOUSE</kbd> LOOK</span>
+        </div>
+      </div>
+
+      <!-- ======================= MOBILE CONTROLS ======================= -->
+      <div id="mobile-controls" class="mobile-controls">
+        <div class="joystick" id="joystick"><div class="joystick-ring"></div><div class="joystick-stick" id="joystick-stick"></div></div>
+        <div class="mobile-actions">
+          <button id="btn-touch-sprint" class="touch-btn sprint"><span>SPRINT</span></button>
+          <button id="btn-touch-interact" class="touch-btn interact"><span>USE</span></button>
+          <button id="btn-touch-flashlight" class="touch-btn small"><span>LIGHT</span></button>
+          <button id="btn-touch-inventory" class="touch-btn small"><span>PACK</span></button>
+        </div>
+        <div class="look-hint" id="look-hint">DRAG RIGHT SIDE TO LOOK</div>
+      </div>
+
+      <!-- ======================= TITLE SCREEN ======================= -->
+      <section id="screen-title" class="screen title-screen">
+        <div class="title-backdrop"></div>
+        <div class="title-frame">
+          <div class="title-topline"><span>IMPERIAL SURVEY DIVISION</span><span>SECTOR 09 // ORPHEUS ARRAY</span><span>YEAR 2387</span></div>
+          <div class="title-main">
+            <div class="title-kicker"><span class="pulse-dot"></span> DISTRESS BEACON INTERCEPTED <span id="title-clock">T+ 00:00:00</span></div>
+            <h1>LOST<span>SIGNAL</span></h1>
+            <div class="title-outpost">OUTPOST <b>09</b></div>
+            <p class="title-tagline">A research station went dark. You are the only recovery specialist on the manifest.</p>
+            <button id="btn-start" class="primary-btn"><span>BEGIN RECOVERY</span><i>→</i></button>
+            <div class="title-secondary">
+              <button id="btn-title-audio" class="ghost-btn">AUDIO: ON</button>
+              <button id="btn-title-quality" class="ghost-btn">GRAPHICS: AUTO</button>
+            </div>
+          </div>
+          <div class="title-brief">
+            <div class="brief-block">
+              <div class="brief-label">MISSION</div>
+              <p>Infiltrate Outpost 09. Recover three classified research assets. Reach the extraction pad.</p>
+            </div>
+            <div class="brief-block">
+              <div class="brief-label">HAZARDS</div>
+              <p>Two autonomous security units remain active. Break line of sight. Conceal yourself. Do not engage.</p>
+            </div>
+            <div class="brief-grid">
+              <span><kbd>WASD</kbd> MOVE</span><span><kbd>MOUSE</kbd> LOOK</span><span><kbd>SHIFT</kbd> SPRINT</span>
+              <span><kbd>E</kbd> INTERACT</span><span><kbd>TAB</kbd> PACK</span><span><kbd>F</kbd> FLASHLIGHT</span>
+            </div>
+          </div>
+        </div>
+        <div class="title-footer"><span>RECOVERY PROTOCOL 7-A</span><span>OFFLINE • NO UPLINK</span><span>BUILD 0.9.7</span></div>
+      </section>
+
+      <!-- ======================= PAUSE ======================= -->
+      <section id="screen-pause" class="screen hidden">
+        <div class="modal panel-modal">
+          <div class="modal-corner tl"></div><div class="modal-corner tr"></div><div class="modal-corner bl"></div><div class="modal-corner br"></div>
+          <div class="modal-kicker">SUIT OS // SUSPENDED</div>
+          <h2>SYSTEM <b>PAUSED</b></h2>
+          <div class="pause-actions">
+            <button id="btn-resume" class="primary-btn compact"><span>RESUME</span><i>→</i></button>
+            <button id="btn-pause-audio" class="menu-btn">AUDIO <b>ON</b></button>
+            <div class="menu-btn quality-row">GRAPHICS
+              <span class="quality-options">
+                <button data-quality="low">LOW</button><button data-quality="medium">MED</button><button data-quality="high">HIGH</button>
+              </span>
+            </div>
+            <button id="btn-restart" class="menu-btn danger">RESTART MISSION</button>
+          </div>
+          <div class="pause-controls">
+            <span><kbd>WASD</kbd> MOVE</span><span><kbd>SHIFT</kbd> SPRINT</span><span><kbd>E</kbd> INTERACT</span><span><kbd>TAB</kbd> PACK</span><span><kbd>F</kbd> LIGHT</span><span><kbd>ESC</kbd> RESUME</span>
+          </div>
+          <div class="pause-note">Pointer lock is released while paused. Click the viewport to recapture the mouse.</div>
+        </div>
+      </section>
+
+      <!-- ======================= INVENTORY ======================= -->
+      <section id="screen-inventory" class="screen hidden">
+        <div class="modal inventory-modal">
+          <div class="modal-corner tl"></div><div class="modal-corner tr"></div><div class="modal-corner bl"></div><div class="modal-corner br"></div>
+          <div class="modal-kicker">FIELD PACK // 6-SLOT CAPACITY</div>
+          <div class="inventory-head">
+            <h2>RECOVERED <b>ASSETS</b></h2>
+            <div class="inventory-summary"><span>RESEARCH <b id="inv-research">0</b></span><span>CREDITS <b id="inv-credits">0</b></span><span>SLOTS <b id="inv-slots">0/6</b></span></div>
+          </div>
+          <div class="inventory-grid" id="inventory-grid"></div>
+          <div class="inventory-footer">
+            <div class="clearance" id="clearance-line">SECURITY CLEARANCE: <b>NONE</b></div>
+            <button id="btn-close-inventory" class="primary-btn compact"><span>CLOSE PACK</span><i>×</i></button>
+          </div>
+          <div class="inventory-note">Items can be discarded to free a slot. Research assets are required for extraction validation.</div>
+        </div>
+      </section>
+
+      <!-- ======================= DATA LOG ======================= -->
+      <section id="screen-log" class="screen hidden">
+        <div class="modal log-modal">
+          <div class="modal-corner tl"></div><div class="modal-corner tr"></div><div class="modal-corner bl"></div><div class="modal-corner br"></div>
+          <div class="modal-kicker" id="log-source">TERMINAL // LAB-01</div>
+          <h2 id="log-title">ARCHIVE <b>ENTRY</b></h2>
+          <div class="log-body" id="log-body"></div>
+          <button id="btn-close-log" class="primary-btn compact"><span>DISCONNECT</span><i>×</i></button>
+        </div>
+      </section>
+
+      <!-- ======================= DEATH ======================= -->
+      <section id="screen-dead" class="screen hidden">
+        <div class="modal dead-modal">
+          <div class="modal-corner tl"></div><div class="modal-corner tr"></div><div class="modal-corner bl"></div><div class="modal-corner br"></div>
+          <div class="dead-sig">SIGNAL // <b>TERMINATED</b></div>
+          <h2>SUIT<br /><b>FAILURE</b></h2>
+          <p>Security units have neutralized the recovery specialist. Outpost 09 remains dark.</p>
+          <button id="btn-retry" class="primary-btn"><span>REDEPLOY</span><i>↻</i></button>
+        </div>
+      </section>
+
+      <!-- ======================= MISSION COMPLETE ======================= -->
+      <section id="screen-complete" class="screen hidden">
+        <div class="modal complete-modal">
+          <div class="modal-corner tl"></div><div class="modal-corner tr"></div><div class="modal-corner bl"></div><div class="modal-corner br"></div>
+          <div class="complete-kicker"><span class="pulse-dot"></span> EXTRACTION CONFIRMED // ASSETS SECURED</div>
+          <h2>MISSION<br /><b>COMPLETE</b></h2>
+          <div class="complete-stats">
+            <div><span>TIME ON SITE</span><b id="complete-time">00:00</b></div>
+            <div><span>RESEARCH VALIDATED</span><b id="complete-research">3 / 3</b></div>
+            <div><span>CREDITS EARNED</span><b id="complete-credits">0</b></div>
+          </div>
+          <div class="complete-list" id="complete-list"></div>
+          <div class="complete-actions">
+            <button id="btn-replay" class="primary-btn"><span>RUN AGAIN</span><i>↻</i></button>
+            <div class="complete-note">OUTPOST 09 RECOVERY LOG UPLINKED<br />FIELD UNIT STATUS: ALIVE</div>
+          </div>
+        </div>
+      </section>
+
+      <div id="loading" class="loading">
+        <div class="loading-inner">
+          <div class="load-mark"></div>
+          <div class="load-title">OUTPOST 09</div>
+          <div class="load-sub">INITIALIZING RECOVERY SUIT...</div>
+          <div class="load-bar"><i id="load-fill"></i></div>
+          <div class="load-status" id="load-status">STANDBY</div>
+        </div>
+      </div>
+
+      <div id="error-panel" class="error-panel hidden">
+        <h2>RENDER LINK FAILED</h2>
+        <p id="error-text">WebGL could not be initialized on this device.</p>
+      </div>
+    </div>
+  </body>
+</html>
